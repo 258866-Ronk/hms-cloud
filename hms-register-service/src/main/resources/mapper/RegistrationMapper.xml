@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcst.hms.register.mapper.RegistrationMapper">
+
+    <sql id="Base_Column_List">
+        id, reg_no, patient_id, patient_name, doctor_code, doctor_name, dept_code, dept_name,
+        schedule_id, work_date, period, queue_no, fee, room, status, chief_complaint, remark,
+        create_time, update_time
+    </sql>
+
+    <select id="selectById" resultType="com.zcst.hms.register.entity.Registration">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_registration WHERE id = #{id}
+    </select>
+
+    <select id="selectList" resultType="com.zcst.hms.register.entity.Registration">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_registration
+        <where>
+            1 = 1
+            <if test="patientId != null">AND patient_id = #{patientId}</if>
+            <if test="doctorCode != null and doctorCode != ''">AND doctor_code = #{doctorCode}</if>
+            <if test="deptCode != null and deptCode != ''">AND dept_code = #{deptCode}</if>
+            <if test="workDate != null and workDate != ''">AND work_date = #{workDate}</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+        ORDER BY work_date DESC, queue_no ASC, id DESC
+    </select>
+
+    <insert id="insert" parameterType="com.zcst.hms.register.entity.Registration"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_registration
+        (reg_no, patient_id, patient_name, doctor_code, doctor_name, dept_code, dept_name,
+         schedule_id, work_date, period, queue_no, fee, room, status, chief_complaint, remark,
+         create_time, update_time)
+        VALUES
+        (#{regNo}, #{patientId}, #{patientName}, #{doctorCode}, #{doctorName}, #{deptCode}, #{deptName},
+         #{scheduleId}, #{workDate}, #{period}, #{queueNo}, #{fee}, #{room}, #{status},
+         #{chiefComplaint}, #{remark}, NOW(), NOW())
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE t_registration SET status = #{status}, update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="updateRemark">
+        UPDATE t_registration SET remark = #{remark}, update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <select id="countDuplicate" resultType="int">
+        SELECT COUNT(1) FROM t_registration
+        WHERE patient_id = #{patientId}
+        AND schedule_id = #{scheduleId}
+        AND status IN (0, 1, 2)
+    </select>
+
+    <select id="maxQueueNo" resultType="java.lang.Integer">
+        SELECT IFNULL(MAX(queue_no), 0) FROM t_registration WHERE schedule_id = #{scheduleId}
+    </select>
+
+    <select id="statsByDept" resultType="java.util.LinkedHashMap">
+        SELECT dept_code AS deptCode, dept_name AS deptName, COUNT(1) AS regCount
+        FROM t_registration
+        <where>
+            <if test="workDate != null and workDate != ''">
+                AND work_date = #{workDate}
+            </if>
+            AND status IN (0, 1, 2)
+        </where>
+        GROUP BY dept_code, dept_name
+        ORDER BY regCount DESC
+    </select>
+
+    <select id="statsByStatus" resultType="java.util.LinkedHashMap">
+        SELECT status AS status, COUNT(1) AS total
+        FROM t_registration
+        <where>
+            <if test="workDate != null and workDate != ''">
+                AND work_date = #{workDate}
+            </if>
+        </where>
+        GROUP BY status
+    </select>
+</mapper>

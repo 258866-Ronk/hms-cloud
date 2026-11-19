@@ -1,0 +1,88 @@
+# ==========================================================
+# 公共配置：所有微服务共享（由 hms-config-server 下发）
+# ==========================================================
+spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 20
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+# 服务注册与发现
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    registry-fetch-interval-seconds: 10
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+    instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 15
+
+# MyBatis
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 监控端点（Hystrix Dashboard 依赖 hystrix.stream）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,hystrix.stream,refresh
+  endpoint:
+    health:
+      show-details: always
+
+# Feign / Hystrix
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 10000
+        loggerLevel: basic
+  hystrix:
+    enabled: true
+  compression:
+    request:
+      enabled: true
+    response:
+      enabled: true
+
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 8000
+      circuitBreaker:
+        requestVolumeThreshold: 5
+        errorThresholdPercentage: 50
+        sleepWindowInMilliseconds: 10000
+
+# 自定义业务配置（网关限流阈值等，支持 /actuator/refresh 热更新）
+hms:
+  jwt:
+    secret: hms-cloud-secret-2026
+    expire: 28800
+  rate-limit:
+    enabled: true
+    # 令牌桶容量 / 每秒生成令牌数（默认整体阈值）
+    capacity: 200
+    refresh-rate: 100
+    # 重点接口限流规则（防止号源被刷）
+    special:
+      /api/register/create: 10
+      /api/record/create: 20

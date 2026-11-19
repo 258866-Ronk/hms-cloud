@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcst.hms.department.mapper.DepartmentMapper">
+
+    <sql id="Base_Column_List">
+        d.id, d.dept_code, d.dept_name, d.parent_code, d.location, d.description,
+        d.sort, d.status, d.create_time,
+        (SELECT COUNT(1) FROM t_doctor o WHERE o.dept_code = d.dept_code AND o.status = 1) AS doctor_count
+    </sql>
+
+    <select id="selectAll" resultType="com.zcst.hms.department.entity.Department">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_department d
+        WHERE d.status = 1
+        <if test="keyword != null and keyword != ''">
+            AND (d.dept_name LIKE CONCAT('%', #{keyword}, '%') OR d.dept_code LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY d.sort ASC, d.id ASC
+    </select>
+
+    <select id="selectByCode" resultType="com.zcst.hms.department.entity.Department">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_department d
+        WHERE d.dept_code = #{deptCode}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.zcst.hms.department.entity.Department">
+        INSERT INTO t_department
+        (dept_code, dept_name, parent_code, location, description, sort, status, create_time)
+        VALUES
+        (#{deptCode}, #{deptName}, #{parentCode}, #{location}, #{description}, #{sort}, 1, NOW())
+    </insert>
+
+    <update id="updateByCode" parameterType="com.zcst.hms.department.entity.Department">
+        UPDATE t_department
+        <set>
+            <if test="deptName != null">dept_name = #{deptName},</if>
+            <if test="parentCode != null">parent_code = #{parentCode},</if>
+            <if test="location != null">location = #{location},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE dept_code = #{deptCode}
+    </update>
+
+    <delete id="deleteByCode">
+        UPDATE t_department SET status = 0 WHERE dept_code = #{deptCode}
+    </delete>
+</mapper>

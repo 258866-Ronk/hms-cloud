@@ -1,0 +1,66 @@
+server:
+  port: 8500
+
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          # 开启基于服务名的动态路由：/服务名/** 亦可访问
+          enabled: true
+          lower-case-service-id: true
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        - id: hms-user-service
+          uri: lb://HMS-USER-SERVICE
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - StripPrefix=0
+        - id: hms-department-service
+          uri: lb://HMS-DEPARTMENT-SERVICE
+          predicates:
+            - Path=/api/dept/**,/api/doctor/**
+          filters:
+            - StripPrefix=0
+        - id: hms-schedule-service
+          uri: lb://HMS-SCHEDULE-SERVICE
+          predicates:
+            - Path=/api/schedule/**
+          filters:
+            - StripPrefix=0
+        - id: hms-register-service
+          uri: lb://HMS-REGISTER-SERVICE
+          predicates:
+            - Path=/api/register/**
+          filters:
+            - StripPrefix=0
+        - id: hms-record-service
+          uri: lb://HMS-RECORD-SERVICE
+          predicates:
+            - Path=/api/record/**,/api/consult/**
+          filters:
+            - StripPrefix=0
+
+hms:
+  jwt:
+    secret: hms-cloud-secret-2026
+  rate-limit:
+    enabled: true
+    capacity: 30
+    refresh-rate: 10
+    special:
+      /api/register/create: 5
+      /api/record/create: 10
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

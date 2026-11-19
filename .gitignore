@@ -1,0 +1,20 @@
+# Maven / 编译产物
+target/
+*.class
+*.jar
+*.war
+
+# 日志
+*.log
+logs/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# 配置 / 密钥
+.env
+*.key

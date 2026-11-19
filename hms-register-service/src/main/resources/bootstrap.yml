@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: hms-register-service
+  cloud:
+    config:
+      uri: http://localhost:8888
+      fail-fast: false

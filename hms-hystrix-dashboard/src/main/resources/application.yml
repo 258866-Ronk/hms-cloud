@@ -1,0 +1,10 @@
+server:
+  port: 8070
+
+spring:
+  application:
+    name: hms-hystrix-dashboard
+
+hystrix:
+  dashboard:
+    proxy-stream-allow-list: "*"

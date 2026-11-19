@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcst.hms.user.mapper.UserMapper">
+
+    <sql id="Base_Column_List">
+        id, username, password, real_name, role, phone, id_card, gender, age,
+        dept_code, title, specialty, intro, status, create_time, update_time
+    </sql>
+
+    <select id="selectById" parameterType="long" resultType="com.zcst.hms.user.entity.User">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_user
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByUsername" parameterType="string" resultType="com.zcst.hms.user.entity.User">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_user
+        WHERE username = #{username}
+        LIMIT 1
+    </select>
+
+    <select id="selectByRole" parameterType="string" resultType="com.zcst.hms.user.entity.User">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_user
+        WHERE role = #{role}
+        ORDER BY id
+    </select>
+
+    <select id="selectDoctors" resultType="com.zcst.hms.user.entity.User">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_user
+        WHERE role = 'DOCTOR'
+        <if test="deptCode != null and deptCode != ''">
+            AND dept_code = #{deptCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (real_name LIKE CONCAT('%', #{keyword}, '%') OR specialty LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY id
+    </select>
+
+    <insert id="insert" parameterType="com.zcst.hms.user.entity.User"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_user
+        (username, password, real_name, role, phone, id_card, gender, age,
+         dept_code, title, specialty, intro, status, create_time, update_time)
+        VALUES
+        (#{username}, #{password}, #{realName}, #{role}, #{phone}, #{idCard}, #{gender}, #{age},
+         #{deptCode}, #{title}, #{specialty}, #{intro}, #{status}, NOW(), NOW())
+    </insert>
+
+    <update id="updateById" parameterType="com.zcst.hms.user.entity.User">
+        UPDATE t_user
+        <set>
+            <if test="realName != null">real_name = #{realName},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="age != null">age = #{age},</if>
+            <if test="deptCode != null">dept_code = #{deptCode},</if>
+            <if test="title != null">title = #{title},</if>
+            <if test="specialty != null">specialty = #{specialty},</if>
+            <if test="intro != null">intro = #{intro},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>

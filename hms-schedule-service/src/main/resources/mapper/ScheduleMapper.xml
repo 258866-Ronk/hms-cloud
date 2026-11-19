@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcst.hms.schedule.mapper.ScheduleMapper">
+
+    <sql id="Base_Column_List">
+        id, doctor_code, doctor_name, dept_code, dept_name, work_date, period,
+        total_num, remaining_num, reg_fee, room, status, version, create_time, update_time
+    </sql>
+
+    <select id="selectList" resultType="com.zcst.hms.schedule.entity.Schedule">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_schedule
+        <where>
+            status = 1
+            <if test="deptCode != null and deptCode != ''">AND dept_code = #{deptCode}</if>
+            <if test="doctorCode != null and doctorCode != ''">AND doctor_code = #{doctorCode}</if>
+            <if test="workDate != null and workDate != ''">AND work_date = #{workDate}</if>
+            <if test="onlyAvailable">AND remaining_num > 0</if>
+        </where>
+        ORDER BY work_date ASC, period ASC, id ASC
+    </select>
+
+    <select id="selectById" resultType="com.zcst.hms.schedule.entity.Schedule">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_schedule
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <!-- 行级悲观锁：并发挂号时保证号源不会超卖 -->
+    <select id="selectByIdForUpdate" resultType="com.zcst.hms.schedule.entity.Schedule">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_schedule
+        WHERE id = #{id}
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <update id="deductRemaining">
+        UPDATE t_schedule
+        SET remaining_num = remaining_num - 1, version = version + 1, update_time = NOW()
+        WHERE id = #{id}
+        AND remaining_num > 0
+        AND status = 1
+    </update>
+
+    <update id="restoreRemaining">
+        UPDATE t_schedule
+        SET remaining_num = LEAST(remaining_num + 1, total_num), version = version + 1, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <insert id="insert" parameterType="com.zcst.hms.schedule.entity.Schedule"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_schedule
+        (doctor_code, doctor_name, dept_code, dept_name, work_date, period,
+        total_num, remaining_num, reg_fee, room, status, version, create_time, update_time)
+        VALUES
+        (#{doctorCode}, #{doctorName}, #{deptCode}, #{deptName}, #{workDate}, #{period},
+        #{totalNum}, #{remainingNum}, #{regFee}, #{room}, 1, 0, NOW(), NOW())
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE t_schedule SET status = #{status}, update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <select id="statsByDept" resultType="java.util.LinkedHashMap">
+        SELECT dept_code AS deptCode, dept_name AS deptName,
+               COUNT(1) AS scheduleCount,
+               SUM(total_num - remaining_num) AS regCount
+        FROM t_schedule
+        WHERE work_date = #{workDate}
+        GROUP BY dept_code, dept_name
+    </select>
+</mapper>

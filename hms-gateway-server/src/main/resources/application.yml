@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: hms-gateway-server
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        - id: hms-user-service
+          uri: lb://HMS-USER-SERVICE
+          predicates:
+            - Path=/api/user/**
+        - id: hms-department-service
+          uri: lb://HMS-DEPARTMENT-SERVICE
+          predicates:
+            - Path=/api/dept/**,/api/doctor/**
+        - id: hms-schedule-service
+          uri: lb://HMS-SCHEDULE-SERVICE
+          predicates:
+            - Path=/api/schedule/**
+        - id: hms-register-service
+          uri: lb://HMS-REGISTER-SERVICE
+          predicates:
+            - Path=/api/register/**
+        - id: hms-record-service
+          uri: lb://HMS-RECORD-SERVICE
+          predicates:
+            - Path=/api/record/**,/api/consult/**
+
+server:
+  port: 8500
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+# 网关限流（配置中心在线时以其下发值为准）
+hms:
+  jwt:
+    secret: hms-cloud-secret-2026
+  rate-limit:
+    enabled: true
+    capacity: 30
+    refresh-rate: 10
+    special:
+      /api/register/create: 5
+      /api/record/create: 10
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
